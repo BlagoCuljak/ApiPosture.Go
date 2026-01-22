@@ -105,7 +105,11 @@ func (f *MarkdownFormatter) writeFindings(result *models.ScanResult, w io.Writer
 		}
 
 		emoji := severityEmoji(sev)
-		fmt.Fprintf(w, "### %s %s Severity\n\n", emoji, strings.Title(string(sev)))
+		sevStr := string(sev)
+		if len(sevStr) > 0 {
+			sevStr = strings.ToUpper(sevStr[:1]) + sevStr[1:]
+		}
+		fmt.Fprintf(w, "### %s %s Severity\n\n", emoji, sevStr)
 
 		for _, finding := range findings {
 			fmt.Fprintf(w, "#### %s: %s\n\n", finding.RuleID, finding.RuleName)

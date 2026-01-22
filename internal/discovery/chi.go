@@ -144,7 +144,11 @@ func (d *ChiDiscoverer) extractEndpoint(call *ast.CallExpr, source *astutil.Pars
 		// Check for Method() or MethodFunc()
 		if (methodName == "Method" || methodName == "MethodFunc") && len(call.Args) >= 2 {
 			methodStr := astutil.GetStringValue(call.Args[0])
-			httpMethod, isRoute = chiRouteMethods[strings.Title(strings.ToLower(methodStr))]
+			// Capitalize first letter for map lookup (e.g., "get" -> "Get")
+			if len(methodStr) > 0 {
+				methodStr = strings.ToUpper(methodStr[:1]) + strings.ToLower(methodStr[1:])
+			}
+			httpMethod, isRoute = chiRouteMethods[methodStr]
 			if !isRoute {
 				// Try uppercase version
 				if m, ok := map[string]models.HTTPMethod{

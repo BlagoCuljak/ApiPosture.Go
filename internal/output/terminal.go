@@ -102,7 +102,7 @@ func (f *TerminalFormatter) writeSummary(result *models.ScanResult, w io.Writer)
 		parts = append(parts, severityConfig[models.SeverityInfo].Color.Sprintf("%d info", summary[models.SeverityInfo]))
 	}
 
-	findingsStr := "No findings"
+	var findingsStr string
 	if len(parts) > 0 {
 		findingsStr = strings.Join(parts, ", ")
 	} else {

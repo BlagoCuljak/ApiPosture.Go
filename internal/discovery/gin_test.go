@@ -81,18 +81,22 @@ func deleteUser(c *gin.Context) {}
 
 	assert.Len(t, endpoints, 4)
 
-	// Verify routes and methods
-	routes := make(map[string]models.HTTPMethod)
+	// Verify routes and methods using route+method as key
+	type routeMethod struct {
+		route  string
+		method models.HTTPMethod
+	}
+	found := make(map[routeMethod]bool)
 	for _, e := range endpoints {
 		require.Len(t, e.Methods, 1)
-		routes[e.Route] = e.Methods[0]
+		found[routeMethod{e.Route, e.Methods[0]}] = true
 		assert.Equal(t, models.FrameworkGin, e.Framework)
 	}
 
-	assert.Equal(t, models.MethodGET, routes["/users"])
-	assert.Equal(t, models.MethodPOST, routes["/users"])
-	assert.Equal(t, models.MethodPUT, routes["/users/:id"])
-	assert.Equal(t, models.MethodDELETE, routes["/users/:id"])
+	assert.True(t, found[routeMethod{"/users", models.MethodGET}])
+	assert.True(t, found[routeMethod{"/users", models.MethodPOST}])
+	assert.True(t, found[routeMethod{"/users/:id", models.MethodPUT}])
+	assert.True(t, found[routeMethod{"/users/:id", models.MethodDELETE}])
 }
 
 func TestGinDiscoverer_DiscoverWithGroups(t *testing.T) {

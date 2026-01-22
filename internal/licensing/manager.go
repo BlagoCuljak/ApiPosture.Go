@@ -6,7 +6,6 @@ import "errors"
 // Manager handles license validation and Pro feature access.
 type Manager struct {
 	isLicensed bool
-	licenseKey string
 }
 
 // NewManager creates a new licensing manager.
