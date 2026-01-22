@@ -1,0 +1,64 @@
+version: 2
+
+project_name: apiposture
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - main: ./cmd/apiposture
+    binary: apiposture
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w
+      - -X github.com/BlagoCuljak/ApiPosture.Go/pkg/version.Version={{.Version}}
+      - -X github.com/BlagoCuljak/ApiPosture.Go/pkg/version.Commit={{.Commit}}
+      - -X github.com/BlagoCuljak/ApiPosture.Go/pkg/version.BuildDate={{.Date}}
+
+archives:
+  - format: tar.gz
+    name_template: >-
+      {{ .ProjectName }}_
+      {{- title .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "386" }}i386
+      {{- else }}{{ .Arch }}{{ end }}
+    format_overrides:
+      - goos: windows
+        format: zip
+
+checksum:
+  name_template: 'checksums.txt'
+
+snapshot:
+  name_template: "{{ incpatch .Version }}-next"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+      - '^ci:'
+      - Merge pull request
+      - Merge branch
+
+brews:
+  - repository:
+      owner: BlagoCuljak
+      name: homebrew-tap
+    folder: Formula
+    homepage: https://github.com/BlagoCuljak/ApiPosture.Go
+    description: API security inspection tool for Go applications
+    license: MIT
+    test: |
+      system "#{bin}/apiposture", "version"
