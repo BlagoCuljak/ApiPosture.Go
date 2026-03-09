@@ -18,15 +18,15 @@ API security inspection tool for Go applications. Performs static source-code an
 go install github.com/BlagoCuljak/ApiPosture.Go/cmd/apiposture@latest
 ```
 
+Ensure `$GOPATH/bin` is in your `$PATH` (typically `~/go/bin`):
+
+```bash
+export PATH="$PATH:$(go env GOPATH)/bin"
+```
+
 ### From Binary
 
 Download the latest release from the [releases page](https://github.com/BlagoCuljak/ApiPosture.Go/releases).
-
-### Homebrew (macOS/Linux)
-
-```bash
-brew install BlagoCuljak/tap/apiposture
-```
 
 ## Quick Start
 
