@@ -15,8 +15,10 @@ API security inspection tool for Go applications. Performs static source-code an
 ### From Source
 
 ```bash
-go install github.com/BlagoCuljak/ApiPosture.Go/cmd/apiposture@latest
+go install github.com/BlagoCuljak/ApiPosture.Go/cmd/apiposture@v1.0.5
 ```
+
+> **Note:** Use an explicit version tag rather than `@latest` immediately after a release, as the Go module proxy may cache the previous version for a few minutes. You can also bypass the cache with `GOPROXY=direct go install ...@latest`.
 
 Ensure `$GOPATH/bin` is in your `$PATH` (typically `~/go/bin`):
 
