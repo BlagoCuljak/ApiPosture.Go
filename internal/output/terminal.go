@@ -10,16 +10,33 @@ import (
 	"github.com/BlagoCuljak/ApiPosture.Go/internal/models"
 )
 
+// Severity icons (emoji) and text fallbacks for icon-disabled mode
+var severityIcons = map[models.Severity]string{
+	models.SeverityCritical: "\u274c",      // Red X
+	models.SeverityHigh:     "\u26a0\ufe0f", // Warning sign
+	models.SeverityMedium:   "\u26a1",       // Lightning bolt
+	models.SeverityLow:      "\u2139\ufe0f", // Info
+	models.SeverityInfo:     "\u2139\ufe0f", // Info
+}
+
+var severityLabels = map[models.Severity]string{
+	models.SeverityCritical: "[CRIT]",
+	models.SeverityHigh:     "[HIGH]",
+	models.SeverityMedium:   "[MED]",
+	models.SeverityLow:      "[LOW]",
+	models.SeverityInfo:     "[INFO]",
+}
+
 // Severity icons and colors
 var severityConfig = map[models.Severity]struct {
 	Color *color.Color
 	Icon  string
 }{
-	models.SeverityCritical: {color.New(color.FgRed, color.Bold), "!!"},
-	models.SeverityHigh:     {color.New(color.FgRed), "!"},
-	models.SeverityMedium:   {color.New(color.FgYellow), "*"},
-	models.SeverityLow:      {color.New(color.FgBlue), "-"},
-	models.SeverityInfo:     {color.New(color.Faint), "i"},
+	models.SeverityCritical: {color.New(color.FgRed, color.Bold), severityIcons[models.SeverityCritical]},
+	models.SeverityHigh:     {color.New(color.FgRed), severityIcons[models.SeverityHigh]},
+	models.SeverityMedium:   {color.New(color.FgYellow), severityIcons[models.SeverityMedium]},
+	models.SeverityLow:      {color.New(color.FgBlue), severityIcons[models.SeverityLow]},
+	models.SeverityInfo:     {color.New(color.Faint), severityIcons[models.SeverityInfo]},
 }
 
 // Classification colors
@@ -37,6 +54,7 @@ type TerminalFormatter struct {
 
 // NewTerminalFormatter creates a new TerminalFormatter.
 func NewTerminalFormatter(opts FormatterOptions) *TerminalFormatter {
+	opts.ApplyEnvironmentDefaults()
 	if opts.NoColor {
 		color.NoColor = true
 	}
@@ -153,7 +171,7 @@ func (f *TerminalFormatter) writeFindings(result *models.ScanResult, w io.Writer
 
 		icon := cfg.Icon
 		if f.opts.NoIcons {
-			icon = strings.ToUpper(string(finding.Severity)[0:1])
+			icon = severityLabels[finding.Severity]
 		}
 
 		sevStr := cfg.Color.Sprint(icon)
