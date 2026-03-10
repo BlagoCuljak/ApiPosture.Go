@@ -8,6 +8,7 @@ import (
 )
 
 // sensitiveKeywords are keywords that indicate potentially sensitive routes.
+// Only use segment-level exact-match terms; avoid substrings of common public words.
 var sensitiveKeywords = []string{
 	"admin",
 	"debug",
@@ -31,13 +32,8 @@ var sensitiveKeywords = []string{
 	"exec",
 	"execute",
 	"eval",
-	"log",
-	"logs",
 	"trace",
 	"metrics",
-	"health",
-	"status",
-	"info",
 	"actuator",
 }
 
@@ -83,10 +79,19 @@ func (r *AP007SensitiveKeywords) Evaluate(endpoint *models.Endpoint) []*models.F
 	}
 
 	route := strings.ToLower(endpoint.FullRoute())
+	// Split route into segments for exact-match comparison; this prevents
+	// substrings like "log" matching "/catalog" or "info" matching "/information".
+	rawSegments := strings.FieldsFunc(route, func(r rune) bool {
+		return r == '/' || r == '-' || r == '_' || r == '.'
+	})
+	segSet := make(map[string]bool, len(rawSegments))
+	for _, s := range rawSegments {
+		segSet[s] = true
+	}
 
 	var found []string
 	for _, keyword := range sensitiveKeywords {
-		if strings.Contains(route, keyword) {
+		if segSet[keyword] {
 			found = append(found, keyword)
 		}
 	}

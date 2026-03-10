@@ -51,6 +51,9 @@ func (d *FiberDiscoverer) Discover(source *astutil.ParsedSource) ([]*models.Endp
 	// Find router groups
 	groups := d.findGroups(source)
 
+	// Collect Use() middleware per variable so that app.Use(auth) propagates to routes
+	useMiddleware := d.findUseMiddleware(source)
+
 	// Find all route registrations
 	ast.Inspect(source.AST, func(n ast.Node) bool {
 		call, ok := n.(*ast.CallExpr)
@@ -58,7 +61,7 @@ func (d *FiberDiscoverer) Discover(source *astutil.ParsedSource) ([]*models.Endp
 			return true
 		}
 
-		endpoint := d.extractEndpoint(call, source, groups)
+		endpoint := d.extractEndpoint(call, source, groups, useMiddleware)
 		if endpoint != nil {
 			endpoints = append(endpoints, endpoint)
 		}
@@ -69,11 +72,45 @@ func (d *FiberDiscoverer) Discover(source *astutil.ParsedSource) ([]*models.Endp
 	return endpoints, nil
 }
 
+// findUseMiddleware collects all .Use() calls and groups them by receiver variable.
+func (d *FiberDiscoverer) findUseMiddleware(source *astutil.ParsedSource) map[string][]string {
+	useMiddleware := make(map[string][]string)
+
+	ast.Inspect(source.AST, func(n ast.Node) bool {
+		stmt, ok := n.(*ast.ExprStmt)
+		if !ok {
+			return true
+		}
+		call, ok := stmt.X.(*ast.CallExpr)
+		if !ok {
+			return true
+		}
+		callName := astutil.GetCallName(call)
+		if !strings.HasSuffix(callName, ".Use") {
+			return true
+		}
+		parts := strings.SplitN(callName, ".", 2)
+		if len(parts) < 2 {
+			return true
+		}
+		receiverVar := parts[0]
+		for _, arg := range call.Args {
+			if fn := d.extractHandlerName(arg); fn != "" {
+				useMiddleware[receiverVar] = append(useMiddleware[receiverVar], fn)
+			}
+		}
+		return true
+	})
+
+	return useMiddleware
+}
+
 // FiberGroupInfo stores information about a Fiber router group.
 type FiberGroupInfo struct {
 	Prefix     string
 	Middleware []string
 	VarName    string
+	ParentVar  string
 }
 
 // findGroups finds all Fiber Group() calls.
@@ -109,6 +146,13 @@ func (d *FiberDiscoverer) findGroups(source *astutil.ParsedSource) map[string]*F
 			VarName: ident.Name,
 		}
 
+		// Capture the receiver variable (e.g. for `v1 := app.Group(...)`, parentVar = "app")
+		if sel, ok := call.Fun.(*ast.SelectorExpr); ok {
+			if parentIdent, ok2 := sel.X.(*ast.Ident); ok2 {
+				group.ParentVar = parentIdent.Name
+			}
+		}
+
 		// Extract prefix
 		if len(call.Args) > 0 {
 			group.Prefix = astutil.GetStringValue(call.Args[0])
@@ -129,7 +173,7 @@ func (d *FiberDiscoverer) findGroups(source *astutil.ParsedSource) map[string]*F
 }
 
 // extractEndpoint extracts an endpoint from a route registration call.
-func (d *FiberDiscoverer) extractEndpoint(call *ast.CallExpr, source *astutil.ParsedSource, groups map[string]*FiberGroupInfo) *models.Endpoint {
+func (d *FiberDiscoverer) extractEndpoint(call *ast.CallExpr, source *astutil.ParsedSource, groups map[string]*FiberGroupInfo, useMiddleware map[string][]string) *models.Endpoint {
 	callName := astutil.GetCallName(call)
 	parts := strings.Split(callName, ".")
 
@@ -165,7 +209,7 @@ func (d *FiberDiscoverer) extractEndpoint(call *ast.CallExpr, source *astutil.Pa
 			call.Args = call.Args[1:]
 		} else if methodName == "All" {
 			// All() matches all methods
-			return d.createEndpoint(call, source, groups, receiverVar,
+			return d.createEndpoint(call, source, groups, useMiddleware, receiverVar,
 				[]models.HTTPMethod{models.MethodGET, models.MethodPOST, models.MethodPUT,
 					models.MethodDELETE, models.MethodPATCH, models.MethodHEAD, models.MethodOPTIONS})
 		} else {
@@ -173,11 +217,11 @@ func (d *FiberDiscoverer) extractEndpoint(call *ast.CallExpr, source *astutil.Pa
 		}
 	}
 
-	return d.createEndpoint(call, source, groups, receiverVar, []models.HTTPMethod{httpMethod})
+	return d.createEndpoint(call, source, groups, useMiddleware, receiverVar, []models.HTTPMethod{httpMethod})
 }
 
 // createEndpoint creates an Endpoint from a route call.
-func (d *FiberDiscoverer) createEndpoint(call *ast.CallExpr, source *astutil.ParsedSource, groups map[string]*FiberGroupInfo, receiverVar string, methods []models.HTTPMethod) *models.Endpoint {
+func (d *FiberDiscoverer) createEndpoint(call *ast.CallExpr, source *astutil.ParsedSource, groups map[string]*FiberGroupInfo, useMiddleware map[string][]string, receiverVar string, methods []models.HTTPMethod) *models.Endpoint {
 	if len(call.Args) < 2 {
 		return nil
 	}
@@ -204,10 +248,23 @@ func (d *FiberDiscoverer) createEndpoint(call *ast.CallExpr, source *astutil.Par
 	if group, ok := groups[receiverVar]; ok {
 		prefix = group.Prefix
 		groupMiddleware = group.Middleware
+
+		// Prepend Use() middleware from parent group, then from this group
+		if group.ParentVar != "" {
+			if parentUseMW, ok2 := useMiddleware[group.ParentVar]; ok2 {
+				groupMiddleware = append(parentUseMW, groupMiddleware...)
+			}
+		}
 	}
 
-	// Extract authorization info
-	allMiddleware := append(groupMiddleware, middleware...)
+	// Prepend Use() middleware called on the receiver variable itself
+	var useMW []string
+	if mw, ok := useMiddleware[receiverVar]; ok {
+		useMW = mw
+	}
+
+	// Extract authorization info: Use()-based MW comes first, then group MW, then inline MW
+	allMiddleware := append(useMW, append(groupMiddleware, middleware...)...)
 	auth := d.authExtractor.Extract(allMiddleware, source)
 
 	endpoint := &models.Endpoint{

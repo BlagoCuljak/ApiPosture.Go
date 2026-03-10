@@ -51,6 +51,36 @@ func TestAP001_PublicWithoutIntent(t *testing.T) {
 			},
 			expectFinding: false,
 		},
+		{
+			name: "login endpoint - known public",
+			endpoint: &models.Endpoint{
+				Route:          "/login",
+				Methods:        []models.HTTPMethod{models.MethodPOST},
+				Classification: models.ClassificationPublic,
+				Authorization:  models.NewAuthorizationInfo(),
+			},
+			expectFinding: false,
+		},
+		{
+			name: "health check endpoint - known public",
+			endpoint: &models.Endpoint{
+				Route:          "/health",
+				Methods:        []models.HTTPMethod{models.MethodGET},
+				Classification: models.ClassificationPublic,
+				Authorization:  models.NewAuthorizationInfo(),
+			},
+			expectFinding: false,
+		},
+		{
+			name: "swagger endpoint - known public",
+			endpoint: &models.Endpoint{
+				Route:          "/swagger/*",
+				Methods:        []models.HTTPMethod{models.MethodGET},
+				Classification: models.ClassificationPublic,
+				Authorization:  models.NewAuthorizationInfo(),
+			},
+			expectFinding: false,
+		},
 	}
 
 	for _, tt := range tests {
@@ -173,6 +203,36 @@ func TestAP004_MissingAuthWrites(t *testing.T) {
 			},
 			expectFinding: false,
 		},
+		{
+			name: "login POST - known public write",
+			endpoint: &models.Endpoint{
+				Route:          "/api/auth/login",
+				Methods:        []models.HTTPMethod{models.MethodPOST},
+				Classification: models.ClassificationPublic,
+				Authorization:  models.NewAuthorizationInfo(),
+			},
+			expectFinding: false,
+		},
+		{
+			name: "register POST - known public write",
+			endpoint: &models.Endpoint{
+				Route:          "/Register",
+				Methods:        []models.HTTPMethod{models.MethodPOST},
+				Classification: models.ClassificationPublic,
+				Authorization:  models.NewAuthorizationInfo(),
+			},
+			expectFinding: false,
+		},
+		{
+			name: "oauth token POST - known public write",
+			endpoint: &models.Endpoint{
+				Route:          "/token",
+				Methods:        []models.HTTPMethod{models.MethodPOST},
+				Classification: models.ClassificationPublic,
+				Authorization:  models.NewAuthorizationInfo(),
+			},
+			expectFinding: false,
+		},
 	}
 
 	for _, tt := range tests {
@@ -246,6 +306,110 @@ func TestAP007_SensitiveKeywords(t *testing.T) {
 			findings := rule.Evaluate(tt.endpoint)
 			if tt.expectFinding {
 				assert.Len(t, findings, 1)
+				assert.Equal(t, "AP007", findings[0].RuleID)
+			} else {
+				assert.Empty(t, findings)
+			}
+		})
+	}
+}
+
+func TestKnownPublicRoutes(t *testing.T) {
+	tests := []struct {
+		route    string
+		expected bool
+	}{
+		{"/login", true},
+		{"/logout", true},
+		{"/register", true},
+		{"/Register", true},
+		{"/api/auth/login", true},
+		{"/v1/auth/token", true},
+		{"/auth/signup", true},
+		{"/google-oauth", true},
+		{"/refresh", true},
+		{"/health", true},
+		{"/healthz", true},
+		{"/api/ping", true},
+		{"/swagger/*", true},
+		{"/Login", true},
+		{"/Logout", true},
+		{"/token", true},
+		{"/auth", true},
+		{"/api/users", false},
+		{"/admin/dashboard", false},
+		{"/customers", false},
+		{"/", false},
+		{"", false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.route, func(t *testing.T) {
+			assert.Equal(t, tt.expected, isKnownPublicEndpoint(tt.route))
+		})
+	}
+}
+
+func TestAP007_SegmentMatching(t *testing.T) {
+	rule := NewAP007SensitiveKeywords()
+
+	tests := []struct {
+		name          string
+		route         string
+		expectFinding bool
+	}{
+		{
+			name:          "health route - not sensitive",
+			route:         "/health",
+			expectFinding: false,
+		},
+		{
+			name:          "status route - not sensitive",
+			route:         "/status",
+			expectFinding: false,
+		},
+		{
+			name:          "info route - not sensitive",
+			route:         "/info",
+			expectFinding: false,
+		},
+		{
+			name:          "log keyword not matched as substring of catalog",
+			route:         "/catalog",
+			expectFinding: false,
+		},
+		{
+			name:          "info keyword not matched as substring of information",
+			route:         "/information",
+			expectFinding: false,
+		},
+		{
+			name:          "admin segment is sensitive",
+			route:         "/admin/users",
+			expectFinding: true,
+		},
+		{
+			name:          "debug segment is sensitive",
+			route:         "/api/debug/vars",
+			expectFinding: true,
+		},
+		{
+			name:          "metrics segment is sensitive",
+			route:         "/metrics",
+			expectFinding: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			endpoint := &models.Endpoint{
+				Route:          tt.route,
+				Methods:        []models.HTTPMethod{models.MethodGET},
+				Classification: models.ClassificationPublic,
+				Authorization:  models.NewAuthorizationInfo(),
+			}
+			findings := rule.Evaluate(endpoint)
+			if tt.expectFinding {
+				assert.NotEmpty(t, findings)
 				assert.Equal(t, "AP007", findings[0].RuleID)
 			} else {
 				assert.Empty(t, findings)

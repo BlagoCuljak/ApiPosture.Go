@@ -143,6 +143,42 @@ func authMiddleware(c *gin.Context) {}
 	}
 }
 
+func TestGinDiscoverer_DiscoverWithUseMiddleware(t *testing.T) {
+	discoverer := NewGinDiscoverer()
+	loader := astutil.NewSourceLoader()
+
+	code := `package main
+
+import "github.com/gin-gonic/gin"
+
+func main() {
+	r := gin.Default()
+
+	r.Use(authMiddleware)
+	r.GET("/protected", protectedHandler)
+	r.GET("/also-protected", anotherHandler)
+}
+
+func protectedHandler(c *gin.Context) {}
+func anotherHandler(c *gin.Context) {}
+func authMiddleware(c *gin.Context) {}
+`
+
+	source, err := loader.ParseContent("test.go", code)
+	require.NoError(t, err)
+
+	endpoints, err := discoverer.Discover(source)
+	require.NoError(t, err)
+
+	assert.Len(t, endpoints, 2)
+
+	// Both routes should inherit auth from r.Use(authMiddleware)
+	for _, e := range endpoints {
+		assert.True(t, e.Authorization.RequiresAuth || len(e.Authorization.AuthDependencies) > 0,
+			"Endpoint %s should have auth from r.Use(authMiddleware)", e.Route)
+	}
+}
+
 func TestGinDiscoverer_DiscoverWithMiddleware(t *testing.T) {
 	discoverer := NewGinDiscoverer()
 	loader := astutil.NewSourceLoader()

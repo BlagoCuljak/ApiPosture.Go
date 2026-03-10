@@ -54,6 +54,11 @@ func (r *AP008EndpointWithoutAuth) Evaluate(endpoint *models.Endpoint) []*models
 		return nil
 	}
 
+	// Skip known public endpoints (health checks, auth flows, etc.)
+	if isKnownPublicEndpoint(endpoint.FullRoute()) {
+		return nil
+	}
+
 	// Build framework-specific recommendation
 	var recommendation string
 	switch endpoint.Framework {

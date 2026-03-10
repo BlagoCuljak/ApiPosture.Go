@@ -53,6 +53,11 @@ func (r *AP001PublicWithoutIntent) Evaluate(endpoint *models.Endpoint) []*models
 		return nil
 	}
 
+	// Skip known public entry points (auth flows, health checks, oauth callbacks)
+	if isKnownPublicEndpoint(endpoint.FullRoute()) {
+		return nil
+	}
+
 	return []*models.Finding{
 		createFinding(r, endpoint,
 			fmt.Sprintf("Endpoint '%s' is public without explicit authorization intent", endpoint.FullRoute()),

@@ -54,6 +54,11 @@ func (r *AP004MissingAuthWrites) Evaluate(endpoint *models.Endpoint) []*models.F
 		return nil
 	}
 
+	// Skip known auth entry points (login, register, oauth, token endpoints are intentionally public writes)
+	if isKnownPublicEndpoint(endpoint.FullRoute()) {
+		return nil
+	}
+
 	// Flag if there's no auth at all
 	if !auth.RequiresAuth && len(auth.AuthDependencies) == 0 && !auth.HasSpecificRequirements() {
 		return []*models.Finding{
