@@ -58,6 +58,25 @@ func GetStringValue(expr ast.Expr) string {
 	return ""
 }
 
+// GetHTTPMethodFromExpr extracts an HTTP method string from an expression.
+// Handles string literals ("POST") and http.MethodXxx constants (http.MethodPost).
+func GetHTTPMethodFromExpr(expr ast.Expr) string {
+	// String literal: "POST", "post"
+	if s := GetStringValue(expr); s != "" {
+		return strings.ToUpper(s)
+	}
+	// http.MethodPost style selector: X.Sel where X is "http" and Sel starts with "Method"
+	if sel, ok := expr.(*ast.SelectorExpr); ok {
+		if pkg, ok := sel.X.(*ast.Ident); ok && pkg.Name == "http" {
+			name := sel.Sel.Name
+			if strings.HasPrefix(name, "Method") {
+				return strings.ToUpper(strings.TrimPrefix(name, "Method"))
+			}
+		}
+	}
+	return ""
+}
+
 // GetStringSlice extracts a []string from an array/slice literal.
 func GetStringSlice(expr ast.Expr) []string {
 	var result []string

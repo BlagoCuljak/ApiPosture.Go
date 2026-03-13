@@ -141,33 +141,29 @@ func (d *ChiDiscoverer) extractEndpoint(call *ast.CallExpr, source *astutil.Pars
 	// Check if this is a route method
 	httpMethod, isRoute := chiRouteMethods[methodName]
 	if !isRoute {
-		// Check for Method() or MethodFunc()
+		// Check for Method() or MethodFunc(): first arg is the HTTP method expression
 		if (methodName == "Method" || methodName == "MethodFunc") && len(call.Args) >= 2 {
-			methodStr := astutil.GetStringValue(call.Args[0])
-			// Capitalize first letter for map lookup (e.g., "get" -> "Get")
-			if len(methodStr) > 0 {
-				methodStr = strings.ToUpper(methodStr[:1]) + strings.ToLower(methodStr[1:])
+			// GetHTTPMethodFromExpr handles both "POST" literals and http.MethodPost constants
+			methodStr := astutil.GetHTTPMethodFromExpr(call.Args[0])
+			if methodStr == "" {
+				return nil
 			}
-			httpMethod, isRoute = chiRouteMethods[methodStr]
-			if !isRoute {
-				// Try uppercase version
-				if m, ok := map[string]models.HTTPMethod{
-					"GET":     models.MethodGET,
-					"POST":    models.MethodPOST,
-					"PUT":     models.MethodPUT,
-					"DELETE":  models.MethodDELETE,
-					"PATCH":   models.MethodPATCH,
-					"HEAD":    models.MethodHEAD,
-					"OPTIONS": models.MethodOPTIONS,
-				}[methodStr]; ok {
-					httpMethod = m
-					isRoute = true
-				}
+			if m, ok := map[string]models.HTTPMethod{
+				"GET":     models.MethodGET,
+				"POST":    models.MethodPOST,
+				"PUT":     models.MethodPUT,
+				"DELETE":  models.MethodDELETE,
+				"PATCH":   models.MethodPATCH,
+				"HEAD":    models.MethodHEAD,
+				"OPTIONS": models.MethodOPTIONS,
+			}[methodStr]; ok {
+				httpMethod = m
+				isRoute = true
 			}
 			if !isRoute {
 				return nil
 			}
-			// Shift args for Method/MethodFunc case
+			// Shift args so createEndpoint sees (route, handler)
 			call.Args = call.Args[1:]
 		} else {
 			return nil
