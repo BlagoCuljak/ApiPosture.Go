@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        go-version: ['1.25']
+        go-version: ['1.23', '1.24', '1.25']
 
     steps:
       - uses: actions/checkout@v4
@@ -49,7 +49,6 @@ jobs:
         uses: golangci/golangci-lint-action@v6
         with:
           version: latest
-          args: --go=1.24
 
   build:
     name: Build
