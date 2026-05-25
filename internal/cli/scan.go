@@ -50,7 +50,7 @@ Examples:
 }
 
 func init() {
-	scanCmd.Flags().StringVarP(&outputFormat, "output", "o", "terminal", "Output format (terminal, json, markdown)")
+	scanCmd.Flags().StringVarP(&outputFormat, "output", "o", "terminal", "Output format (terminal, json, markdown, html)")
 	scanCmd.Flags().StringVarP(&outputFile, "output-file", "f", "", "Write output to file")
 	scanCmd.Flags().StringVarP(&configFile, "config", "c", "", "Configuration file (.apiposture.yaml)")
 	scanCmd.Flags().StringVar(&severity, "severity", "info", "Minimum severity to report (info, low, medium, high, critical)")
@@ -134,6 +134,8 @@ func runScan(cmd *cobra.Command, args []string) error {
 		formatter = output.NewJSONFormatter(opts)
 	case "markdown":
 		formatter = output.NewMarkdownFormatter(opts)
+	case "html":
+		formatter = output.NewHTMLFormatter(opts)
 	default:
 		formatter = output.NewTerminalFormatter(opts)
 	}

@@ -56,6 +56,9 @@ apiposture scan ./path --output json
 # Output as Markdown
 apiposture scan ./path --output markdown --output-file report.md
 
+# Output as HTML
+apiposture scan ./path --output html --output-file report.html
+
 # Only report high severity and above
 apiposture scan ./path --severity high
 
@@ -125,7 +128,7 @@ Flags:
       --method strings        Filter by HTTP method
       --no-color              Disable colored output
       --no-icons              Disable icons in output
-  -o, --output string         Output format (terminal, json, markdown) (default "terminal")
+  -o, --output string         Output format (terminal, json, markdown, html) (default "terminal")
   -f, --output-file string    Write output to file
       --route-contains string Filter routes containing substring
       --rule strings          Filter by rule ID (e.g., AP001)
