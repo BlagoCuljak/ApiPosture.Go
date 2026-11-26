@@ -79,3 +79,8 @@ func (e *Engine) GetRule(ruleID string) Rule {
 	}
 	return nil
 }
+
+// IsEnabled reports whether a rule ID passes the engine's enabled-rules filter.
+func (e *Engine) IsEnabled(ruleID string) bool {
+	return e.enabledRules == nil || e.enabledRules[ruleID]
+}

@@ -31,10 +31,10 @@ func (f *HTMLFormatter) Format(result *models.ScanResult) (string, error) {
 
 // Write writes the formatted result to a writer.
 func (f *HTMLFormatter) Write(result *models.ScanResult, w io.Writer) error {
-	fmt.Fprintln(w, htmlHead())
-	fmt.Fprintln(w, `<body><div class="container">`)
-	fmt.Fprintln(w, `<h1>&#x1F6E1;&#xFE0F; ApiPosture Security Scan Report</h1>`)
-	fmt.Fprintf(w, `<div class="meta"><strong>Generated:</strong> %s UTC</div>`+"\n", time.Now().UTC().Format("2006-01-02 15:04:05"))
+	_, _ = fmt.Fprintln(w, htmlHead())
+	_, _ = fmt.Fprintln(w, `<body><div class="container">`)
+	_, _ = fmt.Fprintln(w, `<h1>&#x1F6E1;&#xFE0F; ApiPosture Security Scan Report</h1>`)
+	_, _ = fmt.Fprintf(w, `<div class="meta"><strong>Generated:</strong> %s UTC</div>`+"\n", time.Now().UTC().Format("2006-01-02 15:04:05"))
 
 	f.writeSummary(result, w)
 	f.writeSeverityBreakdown(result, w)
@@ -45,22 +45,22 @@ func (f *HTMLFormatter) Write(result *models.ScanResult, w io.Writer) error {
 
 	findings := result.ActiveFindings()
 	if len(findings) > 0 {
-		fmt.Fprintln(w, "<h2>Security Findings</h2>")
+		_, _ = fmt.Fprintln(w, "<h2>Security Findings</h2>")
 		for _, finding := range findings {
 			f.writeFinding(finding, w)
 		}
 	} else {
-		fmt.Fprintln(w, "<h2>Security Findings</h2>")
-		fmt.Fprintln(w, `<div class="success">&#x2705; No security findings detected!</div>`)
+		_, _ = fmt.Fprintln(w, "<h2>Security Findings</h2>")
+		_, _ = fmt.Fprintln(w, `<div class="success">&#x2705; No security findings detected!</div>`)
 	}
 
-	fmt.Fprintln(w, `</div></body></html>`)
+	_, _ = fmt.Fprintln(w, `</div></body></html>`)
 	return nil
 }
 
 func (f *HTMLFormatter) writeSummary(result *models.ScanResult, w io.Writer) {
-	fmt.Fprintln(w, "<h2>Summary</h2>")
-	fmt.Fprintln(w, `<div class="summary-grid">`)
+	_, _ = fmt.Fprintln(w, "<h2>Summary</h2>")
+	_, _ = fmt.Fprintln(w, `<div class="summary-grid">`)
 
 	frameworks := make([]string, 0, len(result.FrameworksDetected))
 	for fw := range result.FrameworksDetected {
@@ -76,8 +76,8 @@ func (f *HTMLFormatter) writeSummary(result *models.ScanResult, w io.Writer) {
 	summaryCard(w, "Frameworks", fwStr)
 	summaryCard(w, "Security Findings", fmt.Sprintf("%d", len(result.ActiveFindings())))
 
-	fmt.Fprintln(w, "</div>")
-	fmt.Fprintf(w, `<p class="section-subtitle"><strong>Scan Path:</strong> <code>%s</code></p>`+"\n", html.EscapeString(result.ScanPath))
+	_, _ = fmt.Fprintln(w, "</div>")
+	_, _ = fmt.Fprintf(w, `<p class="section-subtitle"><strong>Scan Path:</strong> <code>%s</code></p>`+"\n", html.EscapeString(result.ScanPath))
 }
 
 func (f *HTMLFormatter) writeSeverityBreakdown(result *models.ScanResult, w io.Writer) {
@@ -90,8 +90,8 @@ func (f *HTMLFormatter) writeSeverityBreakdown(result *models.ScanResult, w io.W
 		return
 	}
 
-	fmt.Fprintln(w, "<h2>Severity Breakdown</h2>")
-	fmt.Fprintln(w, `<ul class="severity-list">`)
+	_, _ = fmt.Fprintln(w, "<h2>Severity Breakdown</h2>")
+	_, _ = fmt.Fprintln(w, `<ul class="severity-list">`)
 
 	severities := []models.Severity{
 		models.SeverityCritical, models.SeverityHigh,
@@ -103,20 +103,20 @@ func (f *HTMLFormatter) writeSeverityBreakdown(result *models.ScanResult, w io.W
 			continue
 		}
 		sStr := strings.ToLower(string(sev))
-		fmt.Fprintf(w, `<li><span class="severity-badge severity-%s">%s</span> &mdash; %d finding(s)</li>`+"\n",
+		_, _ = fmt.Fprintf(w, `<li><span class="severity-badge severity-%s">%s</span> &mdash; %d finding(s)</li>`+"\n",
 			html.EscapeString(sStr), html.EscapeString(strings.ToUpper(sStr[:1]) + sStr[1:]), count)
 	}
-	fmt.Fprintln(w, "</ul>")
+	_, _ = fmt.Fprintln(w, "</ul>")
 }
 
 func (f *HTMLFormatter) writeEndpoints(result *models.ScanResult, w io.Writer) {
-	fmt.Fprintln(w, "<h2>Discovered Endpoints</h2>")
-	fmt.Fprintln(w, "<table>")
-	fmt.Fprintln(w, "  <thead><tr><th>Route</th><th>Methods</th><th>Classification</th><th>Framework</th><th>Function</th><th>Location</th></tr></thead>")
-	fmt.Fprintln(w, "  <tbody>")
+	_, _ = fmt.Fprintln(w, "<h2>Discovered Endpoints</h2>")
+	_, _ = fmt.Fprintln(w, "<table>")
+	_, _ = fmt.Fprintln(w, "  <thead><tr><th>Route</th><th>Methods</th><th>Classification</th><th>Framework</th><th>Function</th><th>Location</th></tr></thead>")
+	_, _ = fmt.Fprintln(w, "  <tbody>")
 
 	for _, ep := range result.Endpoints {
-		fmt.Fprintf(w, "    <tr><td><code>%s</code></td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>\n",
+		_, _ = fmt.Fprintf(w, "    <tr><td><code>%s</code></td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>\n",
 			html.EscapeString(ep.FullRoute()),
 			html.EscapeString(ep.DisplayMethods()),
 			html.EscapeString(string(ep.Classification)),
@@ -125,29 +125,29 @@ func (f *HTMLFormatter) writeEndpoints(result *models.ScanResult, w io.Writer) {
 			html.EscapeString(ep.ShortLocation()))
 	}
 
-	fmt.Fprintln(w, "  </tbody>")
-	fmt.Fprintln(w, "</table>")
+	_, _ = fmt.Fprintln(w, "  </tbody>")
+	_, _ = fmt.Fprintln(w, "</table>")
 }
 
 func (f *HTMLFormatter) writeFinding(finding *models.Finding, w io.Writer) {
 	sev := strings.ToLower(string(finding.Severity))
-	fmt.Fprintf(w, `<div class="finding %s">`+"\n", html.EscapeString(sev))
-	fmt.Fprintf(w, `  <span class="severity-badge severity-%s">%s</span>`+"\n",
+	_, _ = fmt.Fprintf(w, `<div class="finding %s">`+"\n", html.EscapeString(sev))
+	_, _ = fmt.Fprintf(w, `  <span class="severity-badge severity-%s">%s</span>`+"\n",
 		html.EscapeString(sev), html.EscapeString(strings.ToUpper(sev[:1])+sev[1:]))
-	fmt.Fprintf(w, "  <h3>[%s] %s</h3>\n", html.EscapeString(finding.RuleID), html.EscapeString(finding.RuleName))
-	fmt.Fprintf(w, "  <p><strong>Route:</strong> <code>%s</code></p>\n", html.EscapeString(finding.Endpoint.FullRoute()))
-	fmt.Fprintf(w, "  <p><strong>Methods:</strong> %s</p>\n", html.EscapeString(finding.Endpoint.DisplayMethods()))
-	fmt.Fprintf(w, "  <p><strong>Location:</strong> <code>%s</code></p>\n", html.EscapeString(finding.Location()))
-	fmt.Fprintf(w, "  <p>%s</p>\n", html.EscapeString(finding.Message))
+	_, _ = fmt.Fprintf(w, "  <h3>[%s] %s</h3>\n", html.EscapeString(finding.RuleID), html.EscapeString(finding.RuleName))
+	_, _ = fmt.Fprintf(w, "  <p><strong>Route:</strong> <code>%s</code></p>\n", html.EscapeString(finding.Endpoint.FullRoute()))
+	_, _ = fmt.Fprintf(w, "  <p><strong>Methods:</strong> %s</p>\n", html.EscapeString(finding.Endpoint.DisplayMethods()))
+	_, _ = fmt.Fprintf(w, "  <p><strong>Location:</strong> <code>%s</code></p>\n", html.EscapeString(finding.Location()))
+	_, _ = fmt.Fprintf(w, "  <p>%s</p>\n", html.EscapeString(finding.Message))
 	if finding.Recommendation != "" {
-		fmt.Fprintf(w, `  <div class="recommendation"><div class="recommendation-title">Recommendation</div><div>%s</div></div>`+"\n",
+		_, _ = fmt.Fprintf(w, `  <div class="recommendation"><div class="recommendation-title">Recommendation</div><div>%s</div></div>`+"\n",
 			html.EscapeString(finding.Recommendation))
 	}
-	fmt.Fprintln(w, "</div>")
+	_, _ = fmt.Fprintln(w, "</div>")
 }
 
 func summaryCard(w io.Writer, label, value string) {
-	fmt.Fprintf(w, `<div class="summary-card"><div class="label">%s</div><div class="value">%s</div></div>`+"\n",
+	_, _ = fmt.Fprintf(w, `<div class="summary-card"><div class="label">%s</div><div class="value">%s</div></div>`+"\n",
 		html.EscapeString(label), html.EscapeString(value))
 }
 

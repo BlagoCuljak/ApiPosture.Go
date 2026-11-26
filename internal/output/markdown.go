@@ -30,8 +30,8 @@ func (f *MarkdownFormatter) Format(result *models.ScanResult) (string, error) {
 // Write writes the formatted result to a writer.
 func (f *MarkdownFormatter) Write(result *models.ScanResult, w io.Writer) error {
 	// Title
-	fmt.Fprintln(w, "# ApiPosture Security Scan Report")
-	fmt.Fprintln(w)
+	_, _ = fmt.Fprintln(w, "# ApiPosture Security Scan Report")
+	_, _ = fmt.Fprintln(w)
 
 	// Summary
 	f.writeSummary(result, w)
@@ -50,11 +50,11 @@ func (f *MarkdownFormatter) Write(result *models.ScanResult, w io.Writer) error 
 }
 
 func (f *MarkdownFormatter) writeSummary(result *models.ScanResult, w io.Writer) {
-	fmt.Fprintln(w, "## Summary")
-	fmt.Fprintln(w)
+	_, _ = fmt.Fprintln(w, "## Summary")
+	_, _ = fmt.Fprintln(w)
 
-	fmt.Fprintf(w, "- **Scan Path:** `%s`\n", result.ScanPath)
-	fmt.Fprintf(w, "- **Files Scanned:** %d\n", len(result.FilesScanned))
+	_, _ = fmt.Fprintf(w, "- **Scan Path:** `%s`\n", result.ScanPath)
+	_, _ = fmt.Fprintf(w, "- **Files Scanned:** %d\n", len(result.FilesScanned))
 
 	// Frameworks
 	frameworks := make([]string, 0, len(result.FrameworksDetected))
@@ -62,32 +62,32 @@ func (f *MarkdownFormatter) writeSummary(result *models.ScanResult, w io.Writer)
 		frameworks = append(frameworks, string(fw))
 	}
 	if len(frameworks) > 0 {
-		fmt.Fprintf(w, "- **Frameworks Detected:** %s\n", strings.Join(frameworks, ", "))
+		_, _ = fmt.Fprintf(w, "- **Frameworks Detected:** %s\n", strings.Join(frameworks, ", "))
 	} else {
-		fmt.Fprintln(w, "- **Frameworks Detected:** None")
+		_, _ = fmt.Fprintln(w, "- **Frameworks Detected:** None")
 	}
 
-	fmt.Fprintf(w, "- **Endpoints Found:** %d\n", len(result.Endpoints))
-	fmt.Fprintf(w, "- **Security Findings:** %d\n", len(result.ActiveFindings()))
+	_, _ = fmt.Fprintf(w, "- **Endpoints Found:** %d\n", len(result.Endpoints))
+	_, _ = fmt.Fprintf(w, "- **Security Findings:** %d\n", len(result.ActiveFindings()))
 
 	// Severity breakdown
 	summary := result.SeveritySummary()
-	fmt.Fprintln(w)
-	fmt.Fprintln(w, "### Findings by Severity")
-	fmt.Fprintln(w)
-	fmt.Fprintf(w, "| Severity | Count |\n")
-	fmt.Fprintf(w, "|----------|-------|\n")
-	fmt.Fprintf(w, "| Critical | %d |\n", summary[models.SeverityCritical])
-	fmt.Fprintf(w, "| High | %d |\n", summary[models.SeverityHigh])
-	fmt.Fprintf(w, "| Medium | %d |\n", summary[models.SeverityMedium])
-	fmt.Fprintf(w, "| Low | %d |\n", summary[models.SeverityLow])
-	fmt.Fprintf(w, "| Info | %d |\n", summary[models.SeverityInfo])
-	fmt.Fprintln(w)
+	_, _ = fmt.Fprintln(w)
+	_, _ = fmt.Fprintln(w, "### Findings by Severity")
+	_, _ = fmt.Fprintln(w)
+	_, _ = fmt.Fprintf(w, "| Severity | Count |\n")
+	_, _ = fmt.Fprintf(w, "|----------|-------|\n")
+	_, _ = fmt.Fprintf(w, "| Critical | %d |\n", summary[models.SeverityCritical])
+	_, _ = fmt.Fprintf(w, "| High | %d |\n", summary[models.SeverityHigh])
+	_, _ = fmt.Fprintf(w, "| Medium | %d |\n", summary[models.SeverityMedium])
+	_, _ = fmt.Fprintf(w, "| Low | %d |\n", summary[models.SeverityLow])
+	_, _ = fmt.Fprintf(w, "| Info | %d |\n", summary[models.SeverityInfo])
+	_, _ = fmt.Fprintln(w)
 }
 
 func (f *MarkdownFormatter) writeFindings(result *models.ScanResult, w io.Writer) {
-	fmt.Fprintln(w, "## Security Findings")
-	fmt.Fprintln(w)
+	_, _ = fmt.Fprintln(w, "## Security Findings")
+	_, _ = fmt.Fprintln(w)
 
 	// Group by severity for better readability
 	severities := []models.Severity{
@@ -109,31 +109,31 @@ func (f *MarkdownFormatter) writeFindings(result *models.ScanResult, w io.Writer
 		if len(sevStr) > 0 {
 			sevStr = strings.ToUpper(sevStr[:1]) + sevStr[1:]
 		}
-		fmt.Fprintf(w, "### %s %s Severity\n\n", emoji, sevStr)
+		_, _ = fmt.Fprintf(w, "### %s %s Severity\n\n", emoji, sevStr)
 
 		for _, finding := range findings {
-			fmt.Fprintf(w, "#### %s: %s\n\n", finding.RuleID, finding.RuleName)
-			fmt.Fprintf(w, "- **Route:** `%s`\n", finding.Endpoint.FullRoute())
-			fmt.Fprintf(w, "- **Methods:** %s\n", finding.Endpoint.DisplayMethods())
-			fmt.Fprintf(w, "- **Location:** `%s`\n", finding.Location())
-			fmt.Fprintf(w, "- **Message:** %s\n", finding.Message)
+			_, _ = fmt.Fprintf(w, "#### %s: %s\n\n", finding.RuleID, finding.RuleName)
+			_, _ = fmt.Fprintf(w, "- **Route:** `%s`\n", finding.Endpoint.FullRoute())
+			_, _ = fmt.Fprintf(w, "- **Methods:** %s\n", finding.Endpoint.DisplayMethods())
+			_, _ = fmt.Fprintf(w, "- **Location:** `%s`\n", finding.Location())
+			_, _ = fmt.Fprintf(w, "- **Message:** %s\n", finding.Message)
 			if finding.Recommendation != "" {
-				fmt.Fprintf(w, "- **Recommendation:** %s\n", finding.Recommendation)
+				_, _ = fmt.Fprintf(w, "- **Recommendation:** %s\n", finding.Recommendation)
 			}
-			fmt.Fprintln(w)
+			_, _ = fmt.Fprintln(w)
 		}
 	}
 }
 
 func (f *MarkdownFormatter) writeEndpoints(result *models.ScanResult, w io.Writer) {
-	fmt.Fprintln(w, "## Discovered Endpoints")
-	fmt.Fprintln(w)
+	_, _ = fmt.Fprintln(w, "## Discovered Endpoints")
+	_, _ = fmt.Fprintln(w)
 
-	fmt.Fprintln(w, "| Route | Methods | Classification | Framework | Function | Location |")
-	fmt.Fprintln(w, "|-------|---------|----------------|-----------|----------|----------|")
+	_, _ = fmt.Fprintln(w, "| Route | Methods | Classification | Framework | Function | Location |")
+	_, _ = fmt.Fprintln(w, "|-------|---------|----------------|-----------|----------|----------|")
 
 	for _, endpoint := range result.Endpoints {
-		fmt.Fprintf(w, "| `%s` | %s | %s | %s | %s | %s |\n",
+		_, _ = fmt.Fprintf(w, "| `%s` | %s | %s | %s | %s | %s |\n",
 			endpoint.FullRoute(),
 			endpoint.DisplayMethods(),
 			endpoint.Classification,
@@ -142,7 +142,7 @@ func (f *MarkdownFormatter) writeEndpoints(result *models.ScanResult, w io.Write
 			endpoint.ShortLocation())
 	}
 
-	fmt.Fprintln(w)
+	_, _ = fmt.Fprintln(w)
 }
 
 func severityEmoji(sev models.Severity) string {

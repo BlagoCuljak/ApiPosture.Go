@@ -2,7 +2,7 @@
 
 [![Build](https://github.com/BlagoCuljak/ApiPosture.Go/actions/workflows/ci.yml/badge.svg)](https://github.com/BlagoCuljak/ApiPosture.Go/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Go](https://img.shields.io/badge/Go-1.21+-00ADD8?logo=go)](https://golang.org/)
+[![Go](https://img.shields.io/badge/Go-1.26+-00ADD8?logo=go)](https://golang.org/)
 [![Ko-fi](https://img.shields.io/badge/Ko--fi-support-FF5E5B?logo=ko-fi&logoColor=white)](https://ko-fi.com/blagoculjak)
 
 API security inspection tool for Go applications. Performs static source-code analysis using Go's `go/ast` module to identify authorization misconfigurations and security risks in Go API frameworks.
@@ -82,6 +82,9 @@ apiposture scan ./samples/echo_app
 | AP006 | Weak role naming | LOW | Generic roles like "user", "admin" |
 | AP007 | Sensitive route keywords | MEDIUM | admin/debug/export in public routes |
 | AP008 | Endpoint without auth | HIGH | No auth configuration at all |
+| AP201 | Hardcoded secret | HIGH | Provider-prefixed secret (AWS, GitHub, GitLab, Stripe live, Slack, SendGrid, npm, DigitalOcean, GCP, PEM private key) in source or config files |
+
+AP201 is deliberately high-precision: it only matches well-known provider key formats (no generic `password=` / `token=` heuristics), skips test/fixture/sample/docs/vendor paths and placeholder values, and never prints a full secret (only the first 4 characters). It scans `.go`, `.env*`, `.yml`/`.yaml`, `.json` and `.properties` files. Disable it with `rules.disabled: [AP201]`, or suppress by file path with a `suppressions` entry (`rule: AP201`, `route: <path regex>`).
 
 ## Configuration
 

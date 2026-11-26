@@ -3,6 +3,7 @@ package analysis
 import (
 	"os"
 	"path/filepath"
+	"sort"
 	"time"
 
 	"github.com/BlagoCuljak/ApiPosture.Go/internal/classification"
@@ -10,6 +11,7 @@ import (
 	"github.com/BlagoCuljak/ApiPosture.Go/internal/discovery"
 	"github.com/BlagoCuljak/ApiPosture.Go/internal/models"
 	"github.com/BlagoCuljak/ApiPosture.Go/internal/rules"
+	"github.com/BlagoCuljak/ApiPosture.Go/internal/secrets"
 )
 
 // ProjectAnalyzer orchestrates the scanning process for a project.
@@ -62,6 +64,11 @@ func (a *ProjectAnalyzer) Analyze(path string) (*models.ScanResult, error) {
 
 	// Run security rules
 	findings := a.ruleEngine.EvaluateAll(result.Endpoints)
+
+	// Hardcoded secrets (AP201)
+	if a.config.IsRuleEnabled(secrets.RuleID) && a.ruleEngine.IsEnabled(secrets.RuleID) {
+		findings = append(findings, a.scanSecrets(absPath)...)
+	}
 
 	// Apply suppressions
 	for _, finding := range findings {
@@ -124,4 +131,60 @@ func (a *ProjectAnalyzer) scanFile(filePath string, result *models.ScanResult) {
 			result.Endpoints = append(result.Endpoints, endpoints...)
 		}
 	}
+}
+
+// scanSecrets runs the AP201 hardcoded-secret scan and converts matches to findings.
+func (a *ProjectAnalyzer) scanSecrets(absPath string) []*models.Finding {
+	var matches []secrets.Match
+
+	info, err := os.Stat(absPath)
+	if err != nil {
+		return nil
+	}
+
+	root := absPath
+	if !info.IsDir() {
+		// Single file: apply file-level guards to the base name only.
+		root = filepath.Dir(absPath)
+		matches = secrets.ScanFile(absPath, filepath.Base(absPath))
+	} else {
+		matches = secrets.ScanDir(root, func(rel, abs string) bool {
+			for _, pattern := range a.config.ExcludePatterns {
+				if matchPattern(pattern, rel, abs) {
+					return true
+				}
+			}
+			return false
+		})
+	}
+
+	findings := make([]*models.Finding, 0, len(matches))
+	for _, m := range matches {
+		rel, relErr := filepath.Rel(root, m.FilePath)
+		if relErr != nil {
+			rel = m.FilePath
+		}
+		ep := models.NewEndpoint()
+		ep.Route = filepath.ToSlash(rel)
+		ep.FilePath = m.FilePath
+		ep.LineNumber = m.Line
+		ep.Classification = ""
+
+		findings = append(findings, &models.Finding{
+			RuleID:         secrets.RuleID,
+			RuleName:       secrets.RuleName,
+			Severity:       models.SeverityHigh,
+			Message:        m.Type + " found in source (" + m.Redacted + ")",
+			Endpoint:       ep,
+			Recommendation: secrets.Recommendation,
+		})
+	}
+
+	sort.SliceStable(findings, func(i, j int) bool {
+		if findings[i].Endpoint.FilePath != findings[j].Endpoint.FilePath {
+			return findings[i].Endpoint.FilePath < findings[j].Endpoint.FilePath
+		}
+		return findings[i].Endpoint.LineNumber < findings[j].Endpoint.LineNumber
+	})
+	return findings
 }

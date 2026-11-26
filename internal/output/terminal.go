@@ -153,7 +153,7 @@ func (f *TerminalFormatter) Format(result *models.ScanResult) (string, error) {
 //  6. Endpoints table (at bottom, visible immediately after scan)
 //  7. "No security findings!" if clean
 func (f *TerminalFormatter) Write(result *models.ScanResult, w io.Writer) error {
-	fmt.Fprintln(w)
+	_, _ = fmt.Fprintln(w)
 	f.writeHeader(w)
 
 	findings := result.ActiveFindings()
@@ -172,17 +172,17 @@ func (f *TerminalFormatter) Write(result *models.ScanResult, w io.Writer) error 
 
 	// Endpoints table at BOTTOM — visible immediately after scan.
 	if len(result.Endpoints) > 0 {
-		fmt.Fprintln(w)
+		_, _ = fmt.Fprintln(w)
 		f.writeEndpointsTable(result, w)
 	}
 
 	// Final status.
 	if len(findings) == 0 {
-		fmt.Fprintln(w)
-		color.New(color.FgGreen).Fprintln(w, "No security findings!")
+		_, _ = fmt.Fprintln(w)
+		_, _ = color.New(color.FgGreen).Fprintln(w, "No security findings!")
 	}
 
-	fmt.Fprintln(w)
+	_, _ = fmt.Fprintln(w)
 	f.writeFooter(result, w)
 	return nil
 }
@@ -190,24 +190,24 @@ func (f *TerminalFormatter) Write(result *models.ScanResult, w io.Writer) error 
 func (f *TerminalFormatter) writeHeader(w io.Writer) {
 	bold := color.New(color.Bold)
 	writeRule(w, bold.Sprint("ApiPosture Security Scan"), 60)
-	fmt.Fprintln(w)
+	_, _ = fmt.Fprintln(w)
 }
 
 func (f *TerminalFormatter) writeScrollHint(w io.Writer) {
 	faint := color.New(color.Faint)
-	fmt.Fprintln(w)
+	_, _ = fmt.Fprintln(w)
 	writeRule(w, faint.Sprint("^^^^ Scroll up for finding details ^^^^"), 70)
-	fmt.Fprintln(w)
+	_, _ = fmt.Fprintln(w)
 }
 
 func (f *TerminalFormatter) writeFindings(findings []*models.Finding, w io.Writer) {
 	bold := color.New(color.Bold)
 	writeRule(w, bold.Sprintf("Security Findings (%d)", len(findings)), 70)
-	fmt.Fprintln(w)
+	_, _ = fmt.Fprintln(w)
 
 	for _, finding := range findings {
 		f.writeFindingPanel(finding, w)
-		fmt.Fprintln(w)
+		_, _ = fmt.Fprintln(w)
 	}
 }
 
@@ -316,7 +316,7 @@ func (f *TerminalFormatter) writeSeverityChart(result *models.ScanResult, w io.W
 		return
 	}
 
-	fmt.Fprintln(w)
+	_, _ = fmt.Fprintln(w)
 
 	const barMax = 20
 	for _, sev := range []models.Severity{
@@ -339,14 +339,14 @@ func (f *TerminalFormatter) writeSeverityChart(result *models.ScanResult, w io.W
 			barLen = 1
 		}
 		bar := cfg.Color.Sprint(strings.Repeat("█", barLen))
-		fmt.Fprintf(w, "  %s  %-10s %s  %d\n", icon, sev, bar, count)
+		_, _ = fmt.Fprintf(w, "  %s  %-10s %s  %d\n", icon, sev, bar, count)
 	}
 }
 
 func (f *TerminalFormatter) writeEndpointsTable(result *models.ScanResult, w io.Writer) {
 	bold := color.New(color.Bold)
 	writeRule(w, bold.Sprint("Discovered Endpoints"), 70)
-	fmt.Fprintln(w)
+	_, _ = fmt.Fprintln(w)
 
 	type epRow struct {
 		route     string
@@ -421,12 +421,12 @@ func (f *TerminalFormatter) writeEndpointsTable(result *models.ScanResult, w io.
 			strings.Repeat("─", fnW+2) + tr
 	}
 
-	fmt.Fprintln(w, borderRow("╭", "┬", "╮"))
-	fmt.Fprintf(w, "│ %-*s │ %-*s │ %-*s │ %-*s │ %-*s │\n",
+	_, _ = fmt.Fprintln(w, borderRow("╭", "┬", "╮"))
+	_, _ = fmt.Fprintf(w, "│ %-*s │ %-*s │ %-*s │ %-*s │ %-*s │\n",
 		rW, "Route", mW, "Methods", cW, "Classification", fwW, "Framework", fnW, "Function")
-	fmt.Fprintln(w, borderRow("├", "┼", "┤"))
+	_, _ = fmt.Fprintln(w, borderRow("├", "┼", "┤"))
 	for _, r := range rows {
-		fmt.Fprintf(w, "│ %-*s │ %-*s │ %s │ %-*s │ %-*s │\n",
+		_, _ = fmt.Fprintf(w, "│ %-*s │ %-*s │ %s │ %-*s │ %-*s │\n",
 			rW, r.route,
 			mW, r.methods,
 			padVisual(r.classDisp, cW),
@@ -434,30 +434,30 @@ func (f *TerminalFormatter) writeEndpointsTable(result *models.ScanResult, w io.
 			fnW, r.function,
 		)
 	}
-	fmt.Fprintln(w, borderRow("╰", "┴", "╯"))
+	_, _ = fmt.Fprintln(w, borderRow("╰", "┴", "╯"))
 }
 
 func (f *TerminalFormatter) writeFooter(result *models.ScanResult, w io.Writer) {
-	color.New(color.Faint).Fprintf(w, "Scan completed in %dms\n", result.DurationMs())
+	_, _ = color.New(color.Faint).Fprintf(w, "Scan completed in %dms\n", result.DurationMs())
 }
 
 // writeRule writes a centered horizontal rule with optional title text.
 func writeRule(w io.Writer, title string, width int) {
 	vis := visibleLen(title)
 	if vis == 0 {
-		fmt.Fprintln(w, strings.Repeat("─", width))
+		_, _ = fmt.Fprintln(w, strings.Repeat("─", width))
 		return
 	}
 	inner := " " + title + " "
 	innerVis := 2 + vis
 	dashes := width - innerVis
 	if dashes < 2 {
-		fmt.Fprintln(w, inner)
+		_, _ = fmt.Fprintln(w, inner)
 		return
 	}
 	left := dashes / 2
 	right := dashes - left
-	fmt.Fprintf(w, "%s%s%s\n", strings.Repeat("─", left), inner, strings.Repeat("─", right))
+	_, _ = fmt.Fprintf(w, "%s%s%s\n", strings.Repeat("─", left), inner, strings.Repeat("─", right))
 }
 
 // writePanel renders a rounded box panel with a colored header and content lines.
@@ -472,7 +472,7 @@ func writePanel(w io.Writer, header string, lines []string, width int) {
 	if remaining < 0 {
 		remaining = 0
 	}
-	fmt.Fprintf(w, "╭─ %s %s╮\n", header, strings.Repeat("─", remaining))
+	_, _ = fmt.Fprintf(w, "╭─ %s %s╮\n", header, strings.Repeat("─", remaining))
 
 	// Content lines.
 	for _, line := range lines {
@@ -480,11 +480,11 @@ func writePanel(w io.Writer, header string, lines []string, width int) {
 		if padding < 0 {
 			padding = 0
 		}
-		fmt.Fprintf(w, "│ %s%s │\n", line, strings.Repeat(" ", padding))
+		_, _ = fmt.Fprintf(w, "│ %s%s │\n", line, strings.Repeat(" ", padding))
 	}
 
 	// Bottom: ╰──...──╯
-	fmt.Fprintf(w, "╰%s╯\n", strings.Repeat("─", inner))
+	_, _ = fmt.Fprintf(w, "╰%s╯\n", strings.Repeat("─", inner))
 }
 
 // write2ColTable renders a rounded 2-column key/value table.
@@ -500,11 +500,11 @@ func write2ColTable(w io.Writer, h1, h2 string, col1W, col2W int, rows []kvRow) 
 		return tl + strings.Repeat("─", col1W+2) + mid + strings.Repeat("─", col2W+2) + tr
 	}
 
-	fmt.Fprintln(w, hbar("╭", "┬", "╮"))
-	fmt.Fprintf(w, "│ %-*s │ %-*s │\n", col1W, h1, col2W, h2)
-	fmt.Fprintln(w, hbar("├", "┼", "┤"))
+	_, _ = fmt.Fprintln(w, hbar("╭", "┬", "╮"))
+	_, _ = fmt.Fprintf(w, "│ %-*s │ %-*s │\n", col1W, h1, col2W, h2)
+	_, _ = fmt.Fprintln(w, hbar("├", "┼", "┤"))
 	for _, r := range rows {
-		fmt.Fprintf(w, "│ %-*s │ %s │\n", col1W, r.k, padVisual(r.v, col2W))
+		_, _ = fmt.Fprintf(w, "│ %-*s │ %s │\n", col1W, r.k, padVisual(r.v, col2W))
 	}
-	fmt.Fprintln(w, hbar("╰", "┴", "╯"))
+	_, _ = fmt.Fprintln(w, hbar("╰", "┴", "╯"))
 }
